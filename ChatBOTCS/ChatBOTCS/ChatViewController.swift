@@ -76,9 +76,7 @@ class ChatViewController: JSQMessagesViewController {
     {
         self.addMessage(withId: "BotId", name: "Bot", text: "Hi I am Timmy")
         self.finishReceivingMessage()
-        self.addMessage(withId: "BotId", name: "Bot", text: "I am here to help you get information about movies")
-        self.finishReceivingMessage()
-        self.addMessage(withId: "BotId", name: "Bot", text: "Beatka :* <3 <3")
+        self.addMessage(withId: "BotId", name: "Bot", text: "I am here to help you get information about weather")
         self.finishReceivingMessage()
 
     }
