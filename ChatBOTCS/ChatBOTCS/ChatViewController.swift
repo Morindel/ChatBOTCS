@@ -47,15 +47,17 @@ class ChatViewController: JSQMessagesViewController {
         self.senderDisplayName = "userName"
         
         SpeechManager.shared.delegate = self
+        
+        self.inputToolbar.contentView.leftBarButtonItem.isHidden = true
 
-        self.addMicButton()
+       // self.addMicButton()
         
         let deadlineTime = DispatchTime.now() + .seconds(1)
         DispatchQueue.main.asyncAfter(deadline: deadlineTime, execute: {
             self.populateWithWelcomeMessage()
         })
         
-        self.inputToolbar.contentView.textView.autocorrectionType = .no
+       // self.inputToolbar.contentView.textView.autocorrectionType = .no
     }
     
     override func didReceiveMemoryWarning() {
@@ -133,9 +135,12 @@ class ChatViewController: JSQMessagesViewController {
         
             if let textResponse = response.result.fulfillment.speech
             {
-                SpeechManager.shared.speak(text: textResponse)
-                self.addMessage(withId: "BotId", name: "Bot", text: textResponse)
-                self.finishReceivingMessage()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    SpeechManager.shared.speak(text: textResponse)
+                    self.addMessage(withId: "BotId", name: "Bot", text: textResponse)
+                    self.finishReceivingMessage()
+        
+                }
             }
         }, failure: { (request, error) in
             if let error = error{

@@ -2,11 +2,12 @@
 //  SpeechManager.swift
 //  NBA Bot
 //
-//  Created by Pallav Trivedi on 09/02/18.
+//  Created by Jakub Kolodziej on 09/02/18.
 //  Copyright © 2018 Pallav Trivedi. All rights reserved.
 //
 import Foundation
 import Speech
+import AVFoundation
 
 protocol SpeechManagerDelegate
 {
@@ -24,6 +25,8 @@ class SpeechManager
     var recognitionTask: SFSpeechRecognitionTask?
     let audioSession = AVAudioSession.sharedInstance()
     var delegate:SpeechManagerDelegate?
+    var recordingSession: AVAudioSession!
+    var audioRecorder: AVAudioRecorder!
     
     static let shared:SpeechManager = {
         let instance = SpeechManager()
@@ -32,70 +35,35 @@ class SpeechManager
     
     func startRecording() {
         
-        if recognitionTask != nil {
-            recognitionTask?.cancel()
-            recognitionTask = nil
-        }
+        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.m4a")
+        
+        let settings = [
+            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+            AVSampleRateKey: 12000,
+            AVNumberOfChannelsKey: 1,
+            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+        ]
         
         do {
-            try audioSession.setCategory(.record, mode: .default)
-            try audioSession.setMode(AVAudioSession.Mode.measurement)
-            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
+           // audioRecorder.delegate = self
+            audioRecorder.record()
+            
         } catch {
-            print("audioSession properties weren't set because of an error.")
+           stopRecording()
         }
-        
-        request = SFSpeechAudioBufferRecognitionRequest()
-        
-      let inputNode = audioEngine.inputNode
-        
-        
-        let recognitionRequest = request
-        
-        
-        recognitionRequest.shouldReportPartialResults = true
-        
-        recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest, resultHandler: { (result, error) in
-            
-            var isFinal = false
-            
-            if result != nil {
-                
-                self.delegate?.didReceiveText(text: (result?.bestTranscription.formattedString)!)
-                isFinal = (result?.isFinal)!
-            }
-            
-            if error != nil || isFinal {
-                self.audioEngine.stop()
-                inputNode.removeTap(onBus: 0)
-            }
-        })
-        
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { (buffer, when) in
-            self.request.append(buffer)
-        }
-        
-        audioEngine.prepare()
-        
-        do {
-            try audioEngine.start()
-        } catch {
-            print("audioEngine couldn't start because of an error.")
-        }
-        
-        delegate?.didStartedListening(status: true)
         
     }
-    
+
+    func getDocumentsDirectory() -> URL {
+        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+        return paths[0]
+    }
     func stopRecording()
     {
-        if audioEngine.isRunning
-        {
-            audioEngine.stop()
-            request.endAudio()
-            audioEngine.inputNode.removeTap(onBus: 0)
-        }
+        audioRecorder.stop()
+        audioRecorder = nil
+        
     }
     
     func speak(text: String) {
@@ -110,3 +78,5 @@ class SpeechManager
         speechSynthesizer.speak(speechUtterance)
     }
 }
+
+
